@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>BIDS Search</title>
+</head>
+<body>
+    <h1>Search BIDS Datasets</h1>
+    <form id="searchForm">
+        <label for="subject">Subject Name:</label>
+        <input type="text" id="subject" name="subject" required>
+        <button type="submit">Search</button>
+    </form>
+    <div id="results"></div>
+
+    <script>
+    document.getElementById('searchForm').onsubmit = async function(event) {
+        event.preventDefault();
+        const subject = document.getElementById('subject').value;
+        const response = await fetch(`/search?subject=${subject}`);
+        const data = await response.json();
+        const resultsDiv = document.getElementById('results');
+        resultsDiv.innerHTML = '<h2>Results:</h2>';
+        if (data.files && data.files.length > 0) {
+            const list = document.createElement('ul');
+            data.files.forEach(file => {
+                const listItem = document.createElement('li');
+                listItem.textContent = file;
+                list.appendChild(listItem);
+            });
+            resultsDiv.appendChild(list);
+        } else {
+            resultsDiv.innerHTML += '<p>No files found.</p>';
+        }
+    };
+    </script>
+</body>
+</html>
