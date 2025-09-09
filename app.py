@@ -98,9 +98,13 @@ def search_by_name():
         return render_template('search_by_name.html')
     
     # POST request - perform search
-    name_query = request.form.get('name') or request.json.get('name') if request.is_json else None
+    # Fix: Properly handle both JSON and form data
+    if request.is_json:
+        name_query = request.json.get('name')
+    else:
+        name_query = request.form.get('name')
     
-    if not name_query:
+    if not name_query or not name_query.strip():
         return jsonify({"error": "Please provide a name to search for"}), 400
     
     if not participant_data:
@@ -110,7 +114,7 @@ def search_by_name():
         return jsonify({"error": "Base directory not configured. Please complete setup first."}), 400
     
     try:
-        results = query_by_participant_name(name_query, app.config['BASE_DIR'], participant_data)
+        results = query_by_participant_name(name_query.strip(), app.config['BASE_DIR'], participant_data)
         
         if request.is_json:
             return jsonify(results)
@@ -132,6 +136,7 @@ def search_by_criteria():
         return render_template('search_by_criteria.html')
     
     # POST request - perform search
+    # Fix: Properly handle both JSON and form data
     if request.is_json:
         criteria = request.json
     else:
@@ -165,7 +170,7 @@ def search_by_criteria():
         else:
             flash(error_msg, 'error')
             return render_template('search_by_criteria.html')
-
+        
 @app.route('/api/datasets')
 def api_datasets():
     """API endpoint to get datasets summary."""

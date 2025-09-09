@@ -1,0 +1,13 @@
+"Z:\Exp_1-brain_as_predictor\sourcedata\participant-list.xlsx"
+"Z:\Exp_2-video_rating\sourcedata\supp\info\Results_en.xlsx"
+"Z:\Exp_2-video_rating\sourcedata\supp\info\Results_pt.xlsx"
+"Z:\Exp_2-optimized_video_rating\sourcedata\supp\demographics\recruitment_complete_pt.xlsx"
+"Z:\Exp_2-optimized_video_rating\sourcedata\supp\demographics\recruitment_en (Responses).xlsx"
+"Z:\Exp_3_appexperiment\RELEVANT_FILES\ALL_results.csv"
+"Z:\Exp_3_appexperiment\RELEVANT_FILES\ParticipantID_to_XING.csv"
+"Z:\Exp_4-outdoor_walk\lisbon\sourcedata\supp\recruitment_complete.xlsx"
+"Z:\Exp_4-outdoor_walk\copenhagen\sourcedata\supp\recruitment.xlsx"
+"Z:\Exp_5_clinical_study\analysis_metadata\lisbon\lisbon_demographics.xlsx"
+"Z:\Services\cw\sourcedata\supp\drive\Cushman & Wakefield\Participantes\Participantes.xlsx"
+
+python -m utils.merge_participant_excels "Z:\Exp_1-brain_as_predictor\sourcedata\participant-list.xlsx" "Z:\Exp_2-video_rating\sourcedata\supp\info\Results_en.xlsx"   "Z:\Exp_2-video_rating\sourcedata\supp\info\Results_pt.xlsx" "Z:\Exp_2-optimized_video_rating\sourcedata\supp\demographics\recruitment_complete_pt.xlsx" "Z:\Exp_2-optimized_video_rating\sourcedata\supp\demographics\recruitment_en (Responses).xlsx" "Z:\Exp_3_appexperiment\RELEVANT_FILES\ALL_results.csv"   "Z:\Exp_3_appexperiment\RELEVANT_FILES\ParticipantID_to_XING.csv" "Z:\Exp_4-outdoor_walk\lisbon\sourcedata\supp\recruitment_complete.xlsx" "Z:\Exp_4-outdoor_walk\copenhagen\sourcedata\supp\recruitment.xlsx" "Z:\Exp_5_clinical_study\analysis_metadata\lisbon\lisbon_demographics.xlsx" "Z:\Services\cw\sourcedata\supp\drive\Cushman & Wakefield\Participantes\Participantes.xlsx" -o sensitive.xlsx
