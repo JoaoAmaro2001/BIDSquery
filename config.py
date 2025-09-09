@@ -5,6 +5,31 @@ from tkinter import filedialog, messagebox
 
 CONFIG_FILE = os.path.join(os.path.expanduser('~'), '.bidsquery_config.json')
 
+# --- add near the top, next to CONFIG_FILE ---
+CACHE_FILE = os.path.join(os.path.expanduser('~'), '.bidsquery_cache.json')
+
+def load_cache():
+    """Load BIDS discovery cache."""
+    if os.path.exists(CACHE_FILE):
+        with open(CACHE_FILE, 'r') as f:
+            return json.load(f)
+    return {}
+
+def save_cache(cache_data):
+    """Persist BIDS discovery cache."""
+    os.makedirs(os.path.dirname(CACHE_FILE), exist_ok=True)
+    with open(CACHE_FILE, 'w') as f:
+        json.dump(cache_data, f, indent=2)
+
+def clear_cache_file():
+    """Delete persisted BIDS discovery cache."""
+    try:
+        if os.path.exists(CACHE_FILE):
+            os.remove(CACHE_FILE)
+    except OSError:
+        pass
+
+
 def load_config():
     """Load the entire configuration from config file."""
     if os.path.exists(CONFIG_FILE):

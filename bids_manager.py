@@ -1,32 +1,63 @@
 import os
 import json
+import time
 from pathlib import Path
 from bids.layout import BIDSLayout
+from config import load_cache, save_cache  # <— ADD
 
-# Global cache to store BIDSLayout objects
+# Global cache to store BIDSLayout objects (process-memory)
 _layout_cache = {}
 
-def discover_bids_datasets(base_dir, max_levels=3):
+def _is_valid_bids_dir(p: Path) -> bool:
+    """Quick validation: folder exists and has dataset_description.json."""
+    return p.exists() and (p / "dataset_description.json").exists()
+
+def _load_cached_datasets(base_dir: Path, cache_ttl_hours=None):
+    """
+    Return cached datasets for base_dir if still valid.
+    Validates existence of each 'bids' path and optional TTL.
+    """
+    cache = load_cache() or {}
+    entry = cache.get(str(base_dir))
+    if not entry:
+        return None
+
+    # TTL check (optional)
+    if cache_ttl_hours is not None:
+        ts = entry.get("timestamp", 0)
+        age_hours = (time.time() - ts) / 3600.0
+        if age_hours > cache_ttl_hours:
+            return None
+
+    datasets = entry.get("datasets") or []
+    # Validate each cached path
+    valid = []
+    for d in datasets:
+        p = Path(d["path"])
+        if _is_valid_bids_dir(p):
+            valid.append(d)
+
+    # If any invalidated, force rescan
+    if len(valid) != len(datasets):
+        return None
+    return valid
+
+def _save_cached_datasets(base_dir: Path, datasets: list):
+    cache = load_cache() or {}
+    cache[str(base_dir)] = {
+        "timestamp": time.time(),
+        "datasets": datasets,
+    }
+    save_cache(cache)
+
+def discover_bids_datasets(base_dir, max_levels=3, use_cache=True, refresh=False, cache_ttl_hours=None):
     """
     Discover BIDS datasets by locating directories named 'bids' (case-insensitive),
     searching only up to `max_levels` directory levels below `base_dir` for speed.
 
-    For each study (defined as the parent directory of a 'bids' folder), select
-    only the *most-upstream* 'bids' directory within that study and ignore any
-    nested/duplicate 'bids' folders beneath it.
-
-    Args:
-        base_dir (str | Path): Root directory to search.
-        max_levels (int): Maximum directory levels (relative to base_dir) to traverse.
-                          Depth is counted by the number of path components:
-                          base_dir has depth 0, base_dir/a -> 1, ..., etc.
-
-    Returns:
-        list[dict]: One entry per study with keys:
-            - path (str): absolute path to the selected 'bids' directory
-            - name (str): study folder name (parent of 'bids')
-            - project_folder (str): absolute path to the parent of the study folder
-            - description (dict): parsed dataset_description.json if available, else {}
+    With caching:
+      - If use_cache and not refresh, try the persisted cache first.
+      - Validate cached paths; if invalid/stale, fall back to filesystem scan and update cache.
     """
     base_path = Path(base_dir).resolve()
     datasets = []
@@ -35,54 +66,54 @@ def discover_bids_datasets(base_dir, max_levels=3):
         print(f"Warning: Base directory does not exist: {base_path}")
         return datasets
 
+    # 0) Try persisted cache first
+    if use_cache and not refresh:
+        cached = _load_cached_datasets(base_path, cache_ttl_hours=cache_ttl_hours)
+        if cached is not None:
+            print(f"Using cached BIDS studies for: {base_path}  (n={len(cached)})")
+            return cached
+
     print(f"Scanning for 'bids' folders (depth ≤ {max_levels}) in: {base_path}")
 
     # 1) Collect ALL directories named 'bids' within the depth limit
     bids_dirs = []
     for root, dirs, _files in os.walk(base_path, topdown=True):
-        # Compute depth of current root relative to base_dir
         rel = Path(root).resolve().relative_to(base_path)
-        depth = len(rel.parts)  # base_dir => 0, base_dir/a => 1, ...
-
-        # If we're already at or beyond the max depth, do not descend further
+        depth = len(rel.parts)
         if depth >= max_levels:
-            dirs[:] = []  # prune traversal
+            dirs[:] = []
             continue
-
-        # Record any 'bids' dirs at this level (their depth would be depth+1 ≤ max_levels)
         for d in dirs:
             if d.lower() == "bids":
                 bids_dirs.append((Path(root) / d).resolve())
 
     if not bids_dirs:
         print("No 'bids' folders found within the depth limit.")
+        # Also write empty to cache so we don't keep re-scanning if user wants that behavior
+        if use_cache:
+            _save_cached_datasets(base_path, [])
         return datasets
 
     # 2) Sort by path depth (shallower first), then lexicographically
     bids_dirs = sorted(bids_dirs, key=lambda p: (len(p.parts), str(p)))
 
     # 3) Keep only the first (most-upstream) 'bids' per study (study = parent of 'bids')
-    selected_study_roots = []  # Paths to study dirs already claimed
-
+    selected_study_roots = []
     for bids_dir in bids_dirs:
-        study_dir = bids_dir.parent  # study is the parent of 'bids'
-
-        # skip if this bids_dir is under a study we've already selected
+        study_dir = bids_dir.parent
         skip = any(bids_dir.is_relative_to(study_root) for study_root in selected_study_roots)
         if skip:
             continue
 
-        # select this study root and build dataset info
         selected_study_roots.append(study_dir)
 
         dataset_info = {
             "path": str(bids_dir),
-            "name": study_dir.name,                  # study folder name
-            "project_folder": str(study_dir.parent), # parent of study
-            "description": {}
+            "name": study_dir.name,
+            "project_folder": str(study_dir.parent),
+            "description": {},
         }
 
-        # Optional: read dataset_description.json if available
         desc_file = bids_dir / "dataset_description.json"
         if desc_file.exists():
             try:
@@ -95,8 +126,18 @@ def discover_bids_datasets(base_dir, max_levels=3):
         print(f"Found study: {dataset_info['name']}  ->  {dataset_info['path']}")
 
     print(f"Total studies (unique, most-upstream 'bids'): {len(datasets)}")
+
+    # 4) Persist results to cache
+    if use_cache:
+        _save_cached_datasets(base_path, datasets)
+
     return datasets
 
+def clear_cache():
+    """Clear the in-process BIDSLayout cache only."""
+    global _layout_cache
+    _layout_cache.clear()
+    print("BIDS layout cache cleared")
 
 def get_bids_layout(dataset_path):
     """
