@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Results - BIDSQuery</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .search-info {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .participant-section {
+            margin-bottom: 30px;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .participant-header {
+            background: #f8f9fa;
+            padding: 15px;
+            border-bottom: 1px solid #dee2e6;
+        }
+        .participant-info {
+            padding: 15px;
+            background: #fff;
+        }
+        .files-list {
+            margin-top: 15px;
+        }
+        .file-item {
+            background: #f8f9fa;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .file-path {
+            font-family: monospace;
+            font-size: 12px;
+            color: #495057;
+            word-break: break-all;
+        }
+        .file-meta {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 14px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .stat-label {
+            font-size: 14px;
+            color: #6c757d;
+        }
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+        .toggle-details {
+            cursor: pointer;
+            color: #007bff;
+            text-decoration: underline;
+        }
+        .details {
+            display: none;
+            margin-top: 10px;
+            padding: 10px;
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        th, td {
+            padding: 6px 8px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+        th {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Search Results</h1>
+        
+        <!-- Search Information -->
+        <div class="search-info">
+            <h3>Search Details</h3>
+            <p><strong>Query Type:</strong> {{ results.query_type.replace('_', ' ').title() }}</p>
+            {% if results.query_type == 'by_name' %}
+                <p><strong>Search Term:</strong> "{{ results.query }}"</p>
+            {% else %}
+                <p><strong>Search Criteria:</strong> {{ results.criteria }}</p>
+            {% endif %}
+            <p><strong>Datasets Searched:</strong> {{ results.datasets_searched|length }}</p>
+        </div>
+        
+        <!-- Statistics -->
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number">{{ results.participants_found|length }}</div>
+                <div class="stat-label">Participants Found</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ results.total_files }}</div>
+                <div class="stat-label">Files Found</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ results.datasets_searched|length }}</div>
+                <div class="stat-label">Datasets Searched</div>
+            </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div style="margin-bottom: 20px;">
+            {% if results.query_type == 'by_name' %}
+                <a href="/search-by-name" class="btn btn-primary">New Name Search</a>
+            {% else %}
+                <a href="/search-by-criteria" class="btn btn-primary">New Criteria Search</a>
+            {% endif %}
+            <a href="/" class="btn btn-secondary">Back to Dashboard</a>
+            
+            {% if results.total_files > 0 %}
+                <button onclick="downloadResults()" class="btn btn-success">Download Results</button>
+            {% endif %}
+        </div>
+        
+        {% if results.error %}
+            <div style="background: #f8d7da; color: #721c24; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                <strong>Error:</strong> {{ results.error }}
+            </div>
+        {% elif results.total_files == 0 %}
+            <div class="no-results">
+                <h3>No Results Found</h3>
+                <p>No files or participants matched your search criteria.</p>
+                <p>Try adjusting your search terms or criteria.</p>
+            </div>
+        {% else %}
+            <!-- Results by Participant -->
+            {% for participant in results.participants_found %}
+            <div class="participant-section">
+                <div class="participant-header">
+                    <h3>👤 Participant Information</h3>
+                </div>
+                <div class="participant-info">
+                    <table>
+                        {% for key, value in participant.items() %}
+                        <tr>
+                            <th style="width: 200px;">{{ key.replace('_', ' ').title() }}:</th>
+                            <td>{{ value }}</td>
+                        </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+                
+                <!-- Files for this participant -->
+                {% if results.query_type == 'by_name' and results.files_by_participant %}
+                    {% set participant_id = participant.get(results.key_columns.participant_id if results.key_columns else 'id') %}
+                    {% if participant_id in results.files_by_participant %}
+                    <div class="files-list">
+                        <h4 style="padding: 0 15px;">📁 BIDS Files ({{ results.files_by_participant[participant_id]|length }})</h4>
+                        {% for file in results.files_by_participant[participant_id] %}
+                        <div class="file-item">
+                            <div class="file-path">{{ file.path }}</div>
+                            <div class="file-meta">
+                                <strong>Dataset:</strong> {{ file.dataset_name }} | 
+                                <strong>Project:</strong> {{ file.project_folder }}
+                                {% if file.entities %}
+                                | <span class="toggle-details" onclick="toggleDetails(this)">Show Details</span>
+                                <div class="details">
+                                    <strong>Entities:</strong> {{ file.entities }}<br>
+                                    {% if file.metadata %}
+                                    <strong>Metadata:</strong> {{ file.metadata }}
+                                    {% endif %}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+            {% endfor %}
+            
+            <!-- Files (for criteria-based search) -->
+            {% if results.query_type == 'by_criteria' and results.files_found %}
+            <div class="participant-section">
+                <div class="participant-header">
+                    <h3>📁 Matching Files</h3>
+                </div>
+                <div class="files-list" style="padding: 15px;">
+                    {% for file in results.files_found %}
+                    <div class="file-item">
+                        <div class="file-path">{{ file.path }}</div>
+                        <div class="file-meta">
+                            <strong>Dataset:</strong> {{ file.dataset_name }} | 
+                            <strong>Project:</strong> {{ file.project_folder }}
+                            {% if file.participant_info %}
+                            | <strong>Participant:</strong> 
+                            {% for key, value in file.participant_info.items() %}
+                                {% if 'name' in key.lower() %}{{ value }}{% endif %}
+                            {% endfor %}
+                            {% endif %}
+                            {% if file.entities %}
+                            | <span class="toggle-details" onclick="toggleDetails(this)">Show Details</span>
+                            <div class="details">
+                                <strong>Entities:</strong> {{ file.entities }}<br>
+                                {% if file.metadata %}
+                                <strong>Metadata:</strong> {{ file.metadata }}
+                                {% endif %}
+                                {% if file.participant_info %}
+                                <strong>Full Participant Info:</strong><br>
+                                {% for key, value in file.participant_info.items() %}
+                                    {{ key }}: {{ value }}<br>
+                                {% endfor %}
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        {% endif %}
+    </div>
+    
+    <script>
+        function toggleDetails(element) {
+            const details = element.nextElementSibling;
+            if (details.style.display === 'none' || details.style.display === '') {
+                details.style.display = 'block';
+                element.textContent = 'Hide Details';
+            } else {
+                details.style.display = 'none';
+                element.textContent = 'Show Details';
+            }
+        }
+        
+        function downloadResults() {
+            // Create CSV content
+            let csvContent = "data:text/csv;charset=utf-8,";
+            
+            // Add headers
+            csvContent += "Participant,File Path,Dataset,Project Folder,Entities\n";
+            
+            // Prepare data in JavaScript (avoiding Jinja2 in JS)
+            const resultsData = {{ results.files_found | tojson }};
+            
+            // Add data rows
+            resultsData.forEach(file => {
+                const participant = file.participant_info && file.participant_info.name ? file.participant_info.name : 'Unknown';
+                const filePath = file.path || '';
+                const dataset = file.dataset_name || '';
+                const project = file.project_folder || '';
+                const entities = file.entities ? JSON.stringify(file.entities) : '';
+                
+                csvContent += `"${participant.replace(/"/g, '""')}","${filePath.replace(/"/g, '""')}","${dataset.replace(/"/g, '""')}","${project.replace(/"/g, '""')}","${entities.replace(/"/g, '""')}"\n`;
+            });
+            
+            // Create download link
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "bidsquery_results.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+</body>
+</html>

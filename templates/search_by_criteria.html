@@ -1,0 +1,164 @@
+<!-- search_by_criteria.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search by Criteria - BIDSQuery</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .form-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input[type="text"], select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+            text-decoration: none;
+        }
+        .examples {
+            background: #e9ecef;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 Search by Criteria</h1>
+        <p>Find participants and BIDS files matching specific criteria.</p>
+        
+        <form method="POST" action="/search-by-criteria">
+            <div class="form-section">
+                <h3>🧠 BIDS Data Criteria</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="datatype">Data Type:</label>
+                        <select id="datatype" name="datatype">
+                            <option value="">Any</option>
+                            <option value="anat">Anatomical (anat)</option>
+                            <option value="func">Functional (func)</option>
+                            <option value="dwi">Diffusion (dwi)</option>
+                            <option value="fmap">Field Maps (fmap)</option>
+                            <option value="perf">Perfusion (perf)</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="suffix">File Suffix:</label>
+                        <select id="suffix" name="suffix">
+                            <option value="">Any</option>
+                            <option value="T1w">T1-weighted</option>
+                            <option value="T2w">T2-weighted</option>
+                            <option value="FLAIR">FLAIR</option>
+                            <option value="bold">BOLD fMRI</option>
+                            <option value="dwi">DWI</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="task">Task (for functional data):</label>
+                        <input type="text" id="task" name="task" placeholder="e.g., rest, nback">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="session">Session:</label>
+                        <input type="text" id="session" name="session" placeholder="e.g., 01, baseline">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-section">
+                <h3>👤 Participant Criteria</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="age">Age:</label>
+                        <input type="text" id="age" name="age" placeholder="e.g., >60, <30, 25">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="sex">Sex/Gender:</label>
+                        <select id="sex" name="sex">
+                            <option value="">Any</option>
+                            <option value="M">Male</option>
+                            <option value="F">Female</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="diagnosis">Diagnosis/Group:</label>
+                        <input type="text" id="diagnosis" name="diagnosis" placeholder="e.g., control, patient">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="custom_field">Custom Field:</label>
+                        <input type="text" id="custom_field" name="custom_field" placeholder="column_name=value">
+                    </div>
+                </div>
+            </div>
+            
+            <button type="submit" class="btn btn-primary">Search</button>
+            <a href="/" class="btn btn-secondary">Back to Dashboard</a>
+        </form>
+        
+        <div class="examples">
+            <h4>Examples:</h4>
+            <ul>
+                <li><strong>T1-weighted scans for participants over 60:</strong> Data Type=anat, Suffix=T1w, Age=>60</li>
+                <li><strong>Functional rest scans for female participants:</strong> Data Type=func, Task=rest, Sex=F</li>
+                <li><strong>All data for control group:</strong> Diagnosis=control</li>
+                <li><strong>Age comparisons:</strong> Use >, <, >=, <= (e.g., age=">65" or age="<30")</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>

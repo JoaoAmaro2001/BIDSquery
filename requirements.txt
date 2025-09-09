@@ -1,2 +1,15 @@
+# requirements.txt
 flask
+pandas
 pybids
+openpyxl
+
+# For GUI components
+# tkinter  # Usually included with Python
+
+# For executable building
+pyinstaller
+
+# Optional: for better performance with large datasets
+numpy
+scipy

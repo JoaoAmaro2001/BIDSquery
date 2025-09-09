@@ -1,0 +1,8 @@
+{
+  "Name": "Test Study 1",
+  "BIDSVersion": "1.8.0",
+  "DatasetType": "raw",
+  "Authors": [
+    "Test Author"
+  ]
+}
