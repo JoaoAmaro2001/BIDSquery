@@ -77,6 +77,7 @@
         <h1>📊 Search by Criteria</h1>
         <p>Find participants and BIDS files matching specific criteria.</p>
         
+        <!-- templates/search_by_criteria.html (excerpt) -->
         <form method="POST" action="/search-by-criteria">
             <div class="form-section">
                 <h3>🧠 BIDS Data Criteria</h3>
@@ -88,77 +89,64 @@
                             <option value="anat">Anatomical (anat)</option>
                             <option value="func">Functional (func)</option>
                             <option value="dwi">Diffusion (dwi)</option>
-                            <option value="fmap">Field Maps (fmap)</option>
+                            <option value="fmap">Field Map (fmap)</option>
                             <option value="perf">Perfusion (perf)</option>
                         </select>
                     </div>
-                    
                     <div class="form-group">
                         <label for="suffix">File Suffix:</label>
                         <select id="suffix" name="suffix">
                             <option value="">Any</option>
-                            <option value="T1w">T1-weighted</option>
-                            <option value="T2w">T2-weighted</option>
-                            <option value="FLAIR">FLAIR</option>
-                            <option value="bold">BOLD fMRI</option>
+                            <option value="T1w">T1w</option>
+                            <option value="T2w">T2w</option>
+                            <option value="bold">BOLD (func)</option>
                             <option value="dwi">DWI</option>
+                            <option value="FLAIR">FLAIR</option>
                         </select>
                     </div>
-                    
                     <div class="form-group">
-                        <label for="task">Task (for functional data):</label>
-                        <input type="text" id="task" name="task" placeholder="e.g., rest, nback">
+                        <label for="task">Task:</label>
+                        <input type="text" id="task" name="task" placeholder="(optional)">
                     </div>
-                    
                     <div class="form-group">
                         <label for="session">Session:</label>
-                        <input type="text" id="session" name="session" placeholder="e.g., 01, baseline">
+                        <input type="text" id="session" name="session" placeholder="(optional)">
                     </div>
                 </div>
             </div>
-            
             <div class="form-section">
                 <h3>👤 Participant Criteria</h3>
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="age">Age:</label>
-                        <input type="text" id="age" name="age" placeholder="e.g., >60, <30, 25">
+                        <input type="text" id="age" name="age" placeholder="e.g. >60">
                     </div>
-                    
                     <div class="form-group">
-                        <label for="sex">Sex/Gender:</label>
+                        <label for="sex">Sex:</label>
                         <select id="sex" name="sex">
                             <option value="">Any</option>
-                            <option value="M">Male</option>
-                            <option value="F">Female</option>
+                            <option value="M">Male (M)</option>
+                            <option value="F">Female (F)</option>
                         </select>
                     </div>
-                    
                     <div class="form-group">
-                        <label for="diagnosis">Diagnosis/Group:</label>
-                        <input type="text" id="diagnosis" name="diagnosis" placeholder="e.g., control, patient">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="custom_field">Custom Field:</label>
-                        <input type="text" id="custom_field" name="custom_field" placeholder="column_name=value">
+                        <label for="diagnosis">Diagnosis:</label>
+                        <input type="text" id="diagnosis" name="diagnosis" placeholder="e.g. control">
                     </div>
                 </div>
             </div>
-            
             <button type="submit" class="btn btn-primary">Search</button>
             <a href="/" class="btn btn-secondary">Back to Dashboard</a>
         </form>
-        
         <div class="examples">
-            <h4>Examples:</h4>
+            <h4>Search Tips:</h4>
             <ul>
-                <li><strong>T1-weighted scans for participants over 60:</strong> Data Type=anat, Suffix=T1w, Age=>60</li>
-                <li><strong>Functional rest scans for female participants:</strong> Data Type=func, Task=rest, Sex=F</li>
-                <li><strong>All data for control group:</strong> Diagnosis=control</li>
-                <li><strong>Age comparisons:</strong> Use >, <, >=, <= (e.g., age=">65" or age="<30")</li>
+                <li>You can use comparison operators (<code>&gt;</code>, <code>&lt;</code>, <code>&ge;</code>, <code>&le;</code>) for numeric fields (e.g., <code>age &gt; 60</code>).</li>
+                <li>Text criteria are case-insensitive and allow partial matches (e.g., entering "control" for diagnosis will match "Control" and "healthy control").</li>
+                <li>Leave fields blank or at "Any" to ignore that criterion.</li>
             </ul>
         </div>
+
     </div>
 </body>
 </html>

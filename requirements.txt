@@ -10,6 +10,7 @@ openpyxl
 # For executable building
 pyinstaller
 
-# Optional: for better performance with large datasets
+# for better performance with large datasets
 numpy
 scipy
+matplotlib

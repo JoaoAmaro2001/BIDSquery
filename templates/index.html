@@ -219,12 +219,16 @@
         </div>
         {% endif %}
         
-        <!-- Participant Information -->
+        <!-- Participant Data Summary Section -->
         {% if participant_summary %}
         <div class="info-card">
             <h3>👤 Participant Data Summary</h3>
             <p><strong>Total Participants:</strong> {{ participant_summary.total_participants }}</p>
-            <p><strong>Columns:</strong> {{ participant_summary.columns | join(', ') }}</p>
+            {% if participant_summary.columns|length > 10 %}
+                <p><strong>Columns:</strong> {{ participant_summary.columns[:10] | join(', ') }}, ... (and {{ participant_summary.columns|length - 10 }} more)</p>
+            {% else %}
+                <p><strong>Columns:</strong> {{ participant_summary.columns | join(', ') }}</p>
+            {% endif %}
             {% if participant_summary.key_columns %}
             <p><strong>Key Columns Identified:</strong></p>
             <ul>
@@ -236,32 +240,18 @@
         </div>
         {% endif %}
         
-        <!-- Action Buttons -->
         <div class="action-buttons">
             {% if setup_complete %}
-                <a href="/search-by-name" class="btn btn-primary">
-                    🔍 Search by Participant Name
-                </a>
-                <a href="/search-by-criteria" class="btn btn-success">
-                    📊 Search by Criteria
-                </a>
+                <a href="/search-by-name" class="btn btn-primary">🔍 Search by Participant Name</a>
+                <a href="/search-by-criteria" class="btn btn-success">📊 Search by Criteria</a>
             {% endif %}
-            
-            <a href="/setup" class="btn btn-warning">
-                ⚙️ Configuration Setup
-            </a>
-            
-            <a href="/setup-gui" class="btn btn-secondary">
-                🖥️ GUI Setup Dialog
-            </a>
-            
+            <a href="/studies" class="btn btn-warning">🗂️ BIDS Studies</a>
+            <a href="/setup-gui" class="btn btn-secondary">🖥️ GUI Setup Dialog</a>
             {% if base_dir or participant_file %}
-            <a href="/reload-data" class="btn btn-secondary">
-                🔄 Reload Data
-            </a>
+                <a href="/reload-data" class="btn btn-secondary">🔄 Reload Data</a>
             {% endif %}
         </div>
-        
+
         <!-- Usage Instructions -->
         <div style="margin-top: 40px; padding: 20px; background: #e9ecef; border-radius: 8px;">
             <h3>📖 How to Use BIDSQuery</h3>

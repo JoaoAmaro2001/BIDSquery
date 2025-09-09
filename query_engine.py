@@ -148,7 +148,6 @@ def query_by_bids_criteria(base_dir, participant_data, **criteria):
         participant_record = find_participant_by_id(participant_data, subject_id)
         if participant_record:
             participants_with_info.append(participant_record)
-    
     # Step 5: Apply participant criteria filters
     if participant_criteria:
         filtered_participants = []
@@ -158,10 +157,8 @@ def query_by_bids_criteria(base_dir, participant_data, **criteria):
                 if criterion not in participant:
                     matches_criteria = False
                     break
-                
-                # Handle different types of criteria
                 if isinstance(value, str) and any(op in value for op in ['>', '<', '>=', '<=', '!=']):
-                    # Handle comparison operators
+                    # Handle numeric comparisons
                     try:
                         participant_value = float(participant[criterion])
                         if '>=' in value:
@@ -187,45 +184,45 @@ def query_by_bids_criteria(base_dir, participant_data, **criteria):
                     except (ValueError, KeyError):
                         matches_criteria = False
                 else:
-                    # Exact match
-                    if str(participant[criterion]) != str(value):
-                        matches_criteria = False
-                
+                    # Fuzzy matching for non-comparison criteria
+                    try:
+                        # If both values are numeric, compare as numbers
+                        if float(participant[criterion]) == float(value):
+                            # numeric equality match
+                            pass
+                        else:
+                            matches_criteria = False
+                    except:
+                        # Case-insensitive substring match for text
+                        if str(value).lower() not in str(participant[criterion]).lower():
+                            matches_criteria = False
                 if not matches_criteria:
                     break
-            
             if matches_criteria:
                 filtered_participants.append(participant)
-        
         participants_with_info = filtered_participants
-        
-        # Filter files to only include those from participants who match criteria
+        # Filter files to include only those belonging to matching participants
         matching_subject_ids = set()
         for p in participants_with_info:
             pid = get_participant_id(p, participant_data)
             if pid:
+                # Normalize ID by removing 'sub-' if present
                 matching_subject_ids.add(pid.replace('sub-', '') if pid.startswith('sub-') else pid)
-        
-        # Filter files
         filtered_files = []
         for file_info in matching_files:
             file_subject_id = None
             if 'entities' in file_info and 'subject' in file_info['entities']:
                 file_subject_id = file_info['entities']['subject']
             else:
-                import re
                 match = re.search(r'/sub-([^/]+)/', file_info['path'])
                 if match:
                     file_subject_id = match.group(1)
-            
             if file_subject_id in matching_subject_ids:
                 filtered_files.append(file_info)
-        
         results['files_found'] = filtered_files
         results['total_files'] = len(filtered_files)
-    
     results['participants_found'] = participants_with_info
-    
+
     # Add participant info to file records
     participant_lookup = {get_participant_id(p, participant_data): p for p in participants_with_info}
     

@@ -1,0 +1,75 @@
+<!-- templates/setup.html (BIDS Studies page) -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>BIDS Studies - BIDSQuery</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+        }
+        .dataset-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .readme {
+            background: #f8f9fa;
+            padding: 10px;
+            white-space: pre-wrap;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        .chart {
+            max-width: 600px;
+            width: 100%;
+            height: auto;
+            display: block;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗂️ BIDS Studies</h1>
+        {% for ds in datasets %}
+        <div class="dataset-card">
+            <h2>{{ ds.title }}</h2>
+            {% if ds.bids_version or ds.dataset_type %}
+            <p>
+                {% if ds.bids_version %}<strong>BIDS Version:</strong> {{ ds.bids_version }}{% endif %}
+                {% if ds.bids_version and ds.dataset_type %} &#124; {% endif %}
+                {% if ds.dataset_type %}<strong>Dataset Type:</strong> {{ ds.dataset_type }}{% endif %}
+            </p>
+            {% endif %}
+            {% if ds.readme %}
+            <h4>README:</h4>
+            <pre class="readme">{{ ds.readme }}</pre>
+            {% endif %}
+        </div>
+        {% endfor %}
+        <h2>👥 Participant Data Summary</h2>
+        <p><strong>Total Participants:</strong> {{ participant_count }}</p>
+        {% if age_chart %}
+        <h3>Age Distribution</h3>
+        <img src="data:image/png;base64,{{ age_chart }}" alt="Age distribution histogram" class="chart">
+        {% endif %}
+        {% if gender_chart %}
+        <h3>Gender Distribution</h3>
+        <img src="data:image/png;base64,{{ gender_chart }}" alt="Gender distribution bar chart" class="chart">
+        {% endif %}
+    </div>
+</body>
+</html>

@@ -162,87 +162,82 @@ def get_participant_id(participant_record, participant_data):
 def find_participant_by_id(participant_data, participant_id):
     """
     Find a participant by their ID.
-    
-    Args:
-        participant_data (dict): Output from load_participant_data()
-        participant_id (str): The participant/subject ID to search for
-        
-    Returns:
-        dict or None: The participant record, or None if not found
     """
     if participant_data.get('data') is None:
         return None
-    
     df = participant_data['data']
     key_columns = participant_data['key_columns']
-    
     # Clean the ID for comparison
     participant_id = str(participant_id).strip()
-    
     # Try the identified participant ID column first
     if 'participant_id' in key_columns:
         id_col = key_columns['participant_id']
         matches = df[df[id_col].astype(str).str.strip() == participant_id]
         if not matches.empty:
             return matches.iloc[0].to_dict()
-    
-    # Fallback: search in all potential ID columns
+    # Fallback: search in any column that looks like an ID
     for col in df.columns:
         if any(id_term in col.lower() for id_term in ['id', 'subject', 'participant']):
             matches = df[df[col].astype(str).str.strip() == participant_id]
             if not matches.empty:
                 return matches.iloc[0].to_dict()
-    
+    # If not found, try alternate forms with/without 'sub-' prefix
+    alt_id_nosub = participant_id.lower().replace('sub-', '')
+    alt_id_withsub = 'sub-' + alt_id_nosub
+    if 'participant_id' in key_columns:
+        id_col = key_columns['participant_id']
+        matches = df[df[id_col].astype(str).str.strip().str.lower() == alt_id_withsub]
+        if matches.empty:
+            matches = df[df[id_col].astype(str).str.strip().str.lower() == alt_id_nosub]
+        if not matches.empty:
+            return matches.iloc[0].to_dict()
+    for col in df.columns:
+        if any(id_term in col.lower() for id_term in ['id', 'subject', 'participant']):
+            matches = df[df[col].astype(str).str.strip().str.lower() == alt_id_withsub]
+            if matches.empty:
+                matches = df[df[col].astype(str).str.strip().str.lower() == alt_id_nosub]
+            if not matches.empty:
+                return matches.iloc[0].to_dict()
     return None
 
 def filter_participants_by_criteria(participant_data, **criteria):
     """
     Filter participants based on criteria (e.g., age>60, sex='F').
-    
-    Args:
-        participant_data (dict): Output from load_participant_data()
-        **criteria: Filter criteria
-        
-    Returns:
-        list: List of matching participant records
     """
     if participant_data.get('data') is None:
         return []
-    
     df = participant_data['data'].copy()
-    key_columns = participant_data['key_columns']
-    
-    # Apply filters
     for criterion, value in criteria.items():
         if criterion in df.columns:
-            # Handle different types of criteria
             if isinstance(value, str) and any(op in value for op in ['>', '<', '>=', '<=', '!=']):
-                # Handle comparison operators
+                # Numeric comparisons on DataFrame
                 try:
                     if '>=' in value:
-                        threshold = float(value.replace('>=', '').strip())
-                        df = df[df[criterion] >= threshold]
+                        threshold = float(value.replace('>=', '').strip()); df = df[df[criterion] >= threshold]
                     elif '>' in value:
-                        threshold = float(value.replace('>', '').strip())
-                        df = df[df[criterion] > threshold]
+                        threshold = float(value.replace('>', '').strip()); df = df[df[criterion] > threshold]
                     elif '<=' in value:
-                        threshold = float(value.replace('<=', '').strip())
-                        df = df[df[criterion] <= threshold]
+                        threshold = float(value.replace('<=', '').strip()); df = df[df[criterion] <= threshold]
                     elif '<' in value:
-                        threshold = float(value.replace('<', '').strip())
-                        df = df[df[criterion] < threshold]
+                        threshold = float(value.replace('<', '').strip()); df = df[df[criterion] < threshold]
                     elif '!=' in value:
-                        not_value = value.replace('!=', '').strip()
-                        df = df[df[criterion] != not_value]
+                        not_val = value.replace('!=', '').strip(); df = df[df[criterion] != not_val]
                 except ValueError:
                     print(f"Warning: Could not parse numerical criterion: {criterion}={value}")
             else:
-                # Exact match
-                df = df[df[criterion] == value]
+                # Tolerant matching for other criteria
+                if pd.api.types.is_numeric_dtype(df[criterion]):
+                    try:
+                        num_val = float(value)
+                        df = df[df[criterion] == num_val]
+                    except:
+                        df = df[df[criterion].astype(str) == str(value)]
+                else:
+                    df = df[df[criterion].astype(str).str.contains(str(value), case=False, na=False)]
         else:
             print(f"Warning: Column '{criterion}' not found in participant data")
-    
     return df.to_dict('records')
+
 
 def get_participant_summary(participant_data):
     """
