@@ -3,14 +3,14 @@ import json
 import time
 from pathlib import Path
 from bids.layout import BIDSLayout
-from config import load_cache, save_cache  # <— ADD
+from config import load_cache, save_cache
 
 # Global cache to store BIDSLayout objects (process-memory)
 _layout_cache = {}
 
 def _is_valid_bids_dir(p: Path) -> bool:
     """Quick validation: folder exists and has dataset_description.json."""
-    return p.exists() and (p / "dataset_description.json").exists()
+    return p.exists()# and (p / "dataset_description.json").exists()
 
 def _load_cached_datasets(base_dir: Path, cache_ttl_hours=None):
     """

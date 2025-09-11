@@ -4,7 +4,7 @@ import argparse
 import re
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple, Sequence
-
+from datetime import datetime, date
 import pandas as pd
 
 # ---------- Aliases (header unification) ----------
@@ -17,14 +17,27 @@ ALIASES: Dict[str, List[str]] = {
     ],
     "name": [
         "name", "participant_name", "participant name", "fullname", "full name",
-        "nome", "nome completo",
+        "nome", "nome completo", "first name", "first_name", "firstname", "primeiro nome",
     ],
-    "age": ["age", "idade", "age_years"],
+    "surname": [
+        "surname", "last name", "last_name", "lastname", "apelido", "sobrenome",
+        "family name", "family_name", "familyname", "apelidos"
+    ],
+    "age": ["age", "idade", "age_years", "age (years)"],
+    "birthdate": [
+        "birthdate", "birth date", "birth_date", "date of birth", "dob",
+        "data de nascimento", "data nascimento", "nascimento", "birthday"
+    ],
+    "submission_date": [
+        "submission date", "submission_date", "submit date", "submit_date",
+        "carimbo de data/hora", "carimbo de data hora", "timestamp",
+        "data de submissão", "data submissao", "date submitted"
+    ],
     "sex": ["sex", "gender", "sexo", "género", "genero"],
     "email": ["email", "e-mail", "mail"],
     "phone": ["phone", "telefone", "tel", "mobile", "telemovel", "telemóvel", "número de telemóvel", "numero de telemovel"],
     "postal_code": ["postal code", "postcode", "zip", "código postal", "codigo postal", "qual o código postal da sua morada"],
-    "nationality": ["nationality", "nacionalidade"],
+    "nationality": ["nationality", "nacionalidade", "country", "country of origin", "país de origem"],
     "agreeableness": ["agreeableness", "agreeablness"],
     "openness_to_experience": ["openness to experience", "opennesstoexperience"],
     "online_questionnaire_id": ["id online questionnaire"],
@@ -32,7 +45,7 @@ ALIASES: Dict[str, List[str]] = {
 }
 
 MANDATORY = ["participant_id"]
-RECOMMENDED_ORDER = ["name", "age", "sex"]
+RECOMMENDED_ORDER = ["name", "age", "sex", "nationality", "phone", "email"]
 
 # ---------- Smart grouping rules ----------
 GROUPING_RULES: Dict[str, Sequence[str]] = {
@@ -85,6 +98,8 @@ GROUPING_RULES: Dict[str, Sequence[str]] = {
     "sex": [r"\bsex\b|\bgender\b|\bsexo\b|\bg[eé]nero\b|\bgenero\b"],
     "name": [r"\bname\b|\bnome\b|\bfull\s*name\b|\bnome\s*completo\b"],
     "age": [r"\bage\b|\bidade\b"],
+    "birthdate": [r"\bbirthdate\b|\bbirth.*date\b|\bdata.*nascimento\b|\bnascimento\b|\bdob\b"],
+    "submission_date": [r"\bsubmission.*date\b|\bcarimbo.*data\b|\btimestamp\b|\bdata.*submiss\b"],
 }
 
 # ---------- Helpers ----------
@@ -124,6 +139,142 @@ def _normalize_participant_id(value) -> str:
     s = re.sub(r"^(subject|sub)[\s_\-]*", "", s, flags=re.IGNORECASE)
     s = s.strip()
     return f"sub-{s}" if s else ""
+
+def _parse_date(date_val) -> datetime | None:
+    """Parse various date formats and return datetime object."""
+    if pd.isna(date_val):
+        return None
+    
+    date_str = str(date_val).strip()
+    if not date_str:
+        return None
+    
+    # Common date formats
+    formats = [
+        '%Y-%m-%d', '%d/%m/%Y', '%m/%d/%Y', '%d-%m-%Y', '%m-%d-%Y',
+        '%Y/%m/%d', '%d.%m.%Y', '%Y.%m.%d', '%d/%m/%y', '%m/%d/%y',
+        '%Y-%m-%d %H:%M:%S', '%d/%m/%Y %H:%M:%S', '%Y-%m-%d %H:%M',
+        '%d/%m/%Y %H:%M'
+    ]
+    
+    for fmt in formats:
+        try:
+            return datetime.strptime(date_str, fmt)
+        except ValueError:
+            continue
+    
+    # Try pandas to_datetime as fallback
+    try:
+        return pd.to_datetime(date_str)
+    except:
+        return None
+
+def _calculate_age(birthdate: datetime, reference_date: datetime = None) -> int | None:
+    """Calculate age based on birthdate and reference date."""
+    if not birthdate:
+        return None
+    
+    if reference_date is None:
+        reference_date = datetime.now()
+    
+    age = reference_date.year - birthdate.year
+    if (reference_date.month, reference_date.day) < (birthdate.month, birthdate.day):
+        age -= 1
+    
+    return max(0, age)
+
+def _consolidate_names(df: pd.DataFrame, src_name: str) -> Tuple[pd.DataFrame, List[str]]:
+    """Consolidate name and surname columns into a single name column."""
+    df = df.copy()
+    notes = []
+    
+    if "name" in df.columns and "surname" in df.columns:
+        # Combine name and surname
+        name_series = df["name"].astype(str).fillna("").str.strip()
+        surname_series = df["surname"].astype(str).fillna("").str.strip()
+        
+        combined_names = []
+        for name, surname in zip(name_series, surname_series):
+            parts = []
+            if name and name != "nan" and name != "":
+                parts.append(name)
+            if surname and surname != "nan" and surname != "":
+                parts.append(surname)
+            combined_names.append(" ".join(parts).strip())
+        
+        df["name"] = combined_names
+        # Remove surname column to avoid duplication
+        df = df.drop(columns=["surname"])
+        notes.append(f"{src_name}: consolidated name and surname columns")
+    
+    elif "surname" in df.columns and "name" not in df.columns:
+        # If only surname exists, rename it to name
+        df["name"] = df["surname"]
+        df = df.drop(columns=["surname"])
+        notes.append(f"{src_name}: renamed surname column to name")
+    
+    return df, notes
+
+def _process_age_and_birthdate(df: pd.DataFrame, src_name: str) -> Tuple[pd.DataFrame, List[str]]:
+    """Process birthdate and calculate age, handling submission dates."""
+    df = df.copy()
+    notes = []
+    needs_age_estimation_note = False
+    
+    if "birthdate" in df.columns:
+        # Parse birthdates
+        birthdates = df["birthdate"].apply(_parse_date)
+        
+        if "age" not in df.columns:
+            df["age"] = None
+        
+        # Check for submission date
+        submission_dates = None
+        if "submission_date" in df.columns:
+            submission_dates = df["submission_date"].apply(_parse_date)
+        
+        # Calculate ages
+        calculated_ages = []
+        for i, birthdate in enumerate(birthdates):
+            if birthdate is None:
+                calculated_ages.append(df["age"].iloc[i] if "age" in df.columns else None)
+                continue
+            
+            if submission_dates is not None and submission_dates.iloc[i] is not None:
+                # Use submission date as reference
+                age = _calculate_age(birthdate, submission_dates.iloc[i])
+                calculated_ages.append(age)
+            else:
+                # Use today as reference
+                age = _calculate_age(birthdate)
+                calculated_ages.append(age)
+                needs_age_estimation_note = True
+        
+        # Update age column with calculated values where available
+        for i, calc_age in enumerate(calculated_ages):
+            if calc_age is not None:
+                df.loc[i, "age"] = calc_age
+        
+        notes.append(f"{src_name}: calculated age from birthdate for available records")
+        
+        # Remove birthdate column to keep output clean
+        df = df.drop(columns=["birthdate"])
+        
+        # Add estimation note if needed
+        if needs_age_estimation_note:
+            df["age_estimation_note"] = df.apply(
+                lambda row: "Age estimated relative to current date" 
+                if pd.notna(row.get("age")) and "submission_date" not in df.columns 
+                else None, axis=1
+            )
+            notes.append(f"{src_name}: added age estimation notes for records calculated relative to today")
+    
+    # Clean up submission_date if it was only used for age calculation
+    if "submission_date" in df.columns and "birthdate" not in df.columns:
+        # Keep submission_date as it might be useful metadata
+        pass
+    
+    return df, notes
 
 def _first_nonempty_sheet(path: Path) -> pd.DataFrame:
     try:
@@ -310,6 +461,14 @@ def merge_participant_excels(
             # Standardize headers (aliases & typos)
             df = _standardize_headers(df)
 
+            # Consolidate names (merge surname with name)
+            df, name_notes = _consolidate_names(df, p.name)
+            notes.extend(name_notes)
+
+            # Process age and birthdate
+            df, age_notes = _process_age_and_birthdate(df, p.name)
+            notes.extend(age_notes)
+
             # Ensure mandatory participant_id (derive if possible)
             df, missing, warns = _ensure_mandatory(df, p.name)
             notes.extend(warns)
@@ -383,16 +542,21 @@ def merge_participant_excels(
     # 2) recommended: name, age, sex (if present)
     # 3) filepath
     # 4) others by non-empty count desc, then alphabetical
+    # 5) age_estimation_note at the end if present
     priority = ["participant_id"] + [c for c in RECOMMENDED_ORDER if c in merged.columns] + ["filepath"]
     priority = [c for c in priority if c in merged.columns]
 
-    remaining = [c for c in merged.columns if c not in priority]
+    remaining = [c for c in merged.columns if c not in priority and c != "age_estimation_note"]
     remaining_sorted = sorted(
         remaining,
         key=lambda col: (_nonempty_count(merged[col]), col.lower()),
         reverse=True,
     )
+    
     final_cols = priority + remaining_sorted
+    if "age_estimation_note" in merged.columns:
+        final_cols.append("age_estimation_note")
+    
     merged = merged.reindex(columns=final_cols)
 
     # Write Excel

@@ -278,22 +278,22 @@ def get_datasets_summary(base_dir):
     
     return summary
 
-# Test functions
-if __name__ == '__main__':
-    # Example usage - replace with actual paths
-    base_dir = "/path/to/studies"
-    participant_file = "participants.csv"
+# # Test functions
+# if __name__ == '__main__':
+#     # Example usage - replace with actual paths
+#     base_dir = "Z:\\"
+#     participant_file = "C:\\github\\JoaoAmaro2001\\BIDSquery\\sensitive.xlsx"
     
-    print("This is a test of the query engine.")
-    print("Replace the paths above with real ones to test functionality.")
+#     print("This is a test of the query engine.")
+#     print("Replace the paths above with real ones to test functionality.")
     
-    # Example queries you could run:
-    examples = [
-        "query_by_participant_name('john doe', base_dir, participant_data)",
-        "query_by_bids_criteria(base_dir, participant_data, datatype='anat', suffix='T1w')",
-        "query_by_bids_criteria(base_dir, participant_data, age='>60', datatype='func')"
-    ]
+#     # Example queries you could run:
+#     examples = [
+#         "query_by_participant_name('john doe', base_dir, participant_data)",
+#         "query_by_bids_criteria(base_dir, participant_data, datatype='anat', suffix='T1w')",
+#         "query_by_bids_criteria(base_dir, participant_data, age='>60', datatype='func')"
+#     ]
     
-    print("\nExample queries:")
-    for example in examples:
-        print(f"  {example}")
+#     print("\nExample queries:")
+#     for example in examples:
+#         print(f"  {example}")

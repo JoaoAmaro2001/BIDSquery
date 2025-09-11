@@ -3,9 +3,9 @@ import json
 import tkinter as tk
 from tkinter import filedialog, messagebox
 
+# cache path of file containing sensitive information
 CONFIG_FILE = os.path.join(os.path.expanduser('~'), '.bidsquery_config.json')
-
-# --- add near the top, next to CONFIG_FILE ---
+# cache previously found BIDS datasets
 CACHE_FILE = os.path.join(os.path.expanduser('~'), '.bidsquery_cache.json')
 
 def load_cache():
@@ -28,7 +28,6 @@ def clear_cache_file():
             os.remove(CACHE_FILE)
     except OSError:
         pass
-
 
 def load_config():
     """Load the entire configuration from config file."""
@@ -98,7 +97,7 @@ def show_setup_dialog():
     """Show a setup dialog to configure both directories and participant file."""
     root = tk.Tk()
     root.title("BIDSQuery Setup")
-    root.geometry("500x300")
+    root.geometry("800x500")
     
     current_config = load_config()
     
