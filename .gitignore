@@ -2,6 +2,7 @@
 *\.spyproject
 *\dist
 *\build
+*\docs
 BIDSQuery.spec
 sensitive.xlsx
 

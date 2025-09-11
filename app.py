@@ -16,17 +16,37 @@ app.secret_key = 'your-secret-key-here'  # Change this in production
 participant_data = None
 datasets_summary = None
 
+def clear_all_caches():
+    """Clear all caches to ensure clean startup."""
+    global participant_data, datasets_summary
+    participant_data = None
+    datasets_summary = None
+    
+    # Clear BIDS layout cache
+    try:
+        from bids_manager import clear_cache
+        clear_cache()
+        print("Cleared BIDS layout cache")
+    except Exception as e:
+        print(f"Note: Could not clear BIDS cache: {e}")
+
 def initialize_app():
     """Initialize the app with configuration and data loading."""
     global participant_data, datasets_summary
+    
+    # Clear all caches first for clean startup
+    clear_all_caches()
+    
     base_dir = load_base_dir()
     participant_file = load_participant_file_path()
+    
     # Load participant data if available
     if participant_file:
         participant_data = load_participant_data(participant_file)
         if 'error' in participant_data:
             print(f"Error loading participant data: {participant_data['error']}")
             participant_data = None
+    
     # Load datasets summary if base directory is available
     if base_dir:
         try:
@@ -34,6 +54,7 @@ def initialize_app():
         except Exception as e:
             print(f"Error loading datasets summary: {e}")
             datasets_summary = None
+    
     app.config['BASE_DIR'] = base_dir
     app.config['PARTICIPANT_FILE'] = participant_file
 
@@ -132,7 +153,7 @@ def studies():
         'age_chart': age_chart,
         'gender_chart': gender_chart
     }
-    return render_template('studies.html', **context)  # using setup.html as the BIDS Studies template
+    return render_template('studies.html', **context)
 
 @app.route('/setup-gui')
 def setup_gui():
@@ -183,6 +204,9 @@ def search_by_criteria():
         return jsonify(results) if request.is_json else render_template('search_results.html', results=results)
     except Exception as e:
         error_msg = f"Search error: {e}"
+        print(f"Detailed error in search_by_criteria: {e}")  # Debug logging
+        import traceback
+        traceback.print_exc()  # Print full traceback for debugging
         if request.is_json:
             return jsonify({"error": error_msg}), 500
         flash(error_msg, 'error')
@@ -229,6 +253,7 @@ if __name__ == '__main__':
     parser.add_argument('--port', type=int, default=5000, help="Port to run the Flask app on (default: 5000)")
     parser.add_argument('--debug', action='store_true', help="Run Flask app in debug mode")
     args = parser.parse_args()
+    
     if args.setup:
         show_setup_dialog()
         print("Setup completed. You can now run the app without the --setup flag.")
@@ -243,6 +268,8 @@ if __name__ == '__main__':
             print(" - Run with --setup flag to launch the GUI setup dialog:")
             print(f"   python {__file__} --setup")
             print("="*60 + "\n")
+        
         print(f"Starting BIDSQuery app on http://localhost:{args.port}")
         print("Press Ctrl+C to stop the server")
-        app.run(debug=args.debug, port=args.port, host='0.0.0.0')
+        # Changed: Only bind to localhost (127.0.0.1) instead of all interfaces (0.0.0.0)
+        app.run(debug=args.debug, port=args.port, host='127.0.0.1')
