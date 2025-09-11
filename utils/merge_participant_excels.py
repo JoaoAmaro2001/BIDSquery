@@ -323,6 +323,7 @@ _GENDER_MAP = {
     # non-binary and variants
     "nonbinary": "non-binary", "non-binary": "non-binary", "nb": "non-binary",
     "não binário": "non-binary", "nao binario": "non-binary", "genderqueer": "non-binary",
+    "não-binário": "non-binary",
     # prefer not to say / unknown
     "prefer not to say": "prefer-not-to-say", "prefer-not-to-say": "prefer-not-to-say",
     "prefiro nao dizer": "prefer-not-to-say", "prefiro não dizer": "prefer-not-to-say",
@@ -506,6 +507,9 @@ def merge_participant_excels(
             if smart_group:
                 df, grouped_notes = _coalesce_columns(df, GROUPING_RULES)
                 notes.extend(grouped_notes)
+
+            if "sex" in df.columns:
+                df["sex"] = df["sex"].apply(_normalize_sex_value)                
 
             # Normalize dtypes to 'object' to keep concat quiet and consistent
             df = df.astype("object")

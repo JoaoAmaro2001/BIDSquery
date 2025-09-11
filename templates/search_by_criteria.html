@@ -13,7 +13,7 @@
             background-color: #f5f5f5;
         }
         .container {
-            max-width: 900px;
+            max-width: 1200px;
             margin: 0 auto;
             background: white;
             padding: 30px;
@@ -28,7 +28,7 @@
         }
         .form-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 15px;
         }
         .form-group {
@@ -45,6 +45,7 @@
             border: 1px solid #ddd;
             border-radius: 4px;
             font-size: 14px;
+            box-sizing: border-box;
         }
         .btn {
             padding: 12px 20px;
@@ -70,83 +71,351 @@
             margin-top: 20px;
             font-size: 14px;
         }
+        .section-title {
+            color: #495057;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 5px;
+        }
+        .modality-group {
+            background: #fff;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .modality-title {
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>📊 Search by Criteria</h1>
-        <p>Find participants and BIDS files matching specific criteria.</p>
+        <p>Find participants and BIDS files matching specific criteria across all neuroimaging and physiological modalities.</p>
         
-        <!-- templates/search_by_criteria.html (excerpt) -->
         <form method="POST" action="/search-by-criteria">
             <div class="form-section">
-                <h3>🧠 BIDS Data Criteria</h3>
+                <h3 class="section-title">🧠 BIDS Data Criteria</h3>
+                
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="datatype">Data Type:</label>
                         <select id="datatype" name="datatype">
                             <option value="">Any</option>
-                            <option value="anat">Anatomical (anat)</option>
-                            <option value="func">Functional (func)</option>
-                            <option value="dwi">Diffusion (dwi)</option>
-                            <option value="fmap">Field Map (fmap)</option>
-                            <option value="perf">Perfusion (perf)</option>
+                            <optgroup label="Core Neuroimaging">
+                                <option value="anat">Anatomical (anat)</option>
+                                <option value="func">Functional MRI (func)</option>
+                                <option value="dwi">Diffusion Weighted (dwi)</option>
+                                <option value="fmap">Field Map (fmap)</option>
+                                <option value="perf">Perfusion (perf)</option>
+                            </optgroup>
+                            <optgroup label="Electrophysiology">
+                                <option value="eeg">EEG</option>
+                                <option value="ieeg">iEEG (Intracranial EEG)</option>
+                                <option value="meg">MEG</option>
+                            </optgroup>
+                            <optgroup label="Optical Imaging">
+                                <option value="nirs">Near-Infrared Spectroscopy (NIRS)</option>
+                                <option value="fnirs">Functional NIRS</option>
+                            </optgroup>
+                            <optgroup label="Physiological">
+                                <option value="physio">Physiological recordings</option>
+                                <option value="stim">Stimulus presentations</option>
+                            </optgroup>
+                            <optgroup label="Behavioral & Phenotypic">
+                                <option value="beh">Behavioral</option>
+                                <option value="phenotype">Phenotypic data</option>
+                            </optgroup>
+                            <optgroup label="Other">
+                                <option value="pet">PET</option>
+                                <option value="micr">Microscopy</option>
+                            </optgroup>
                         </select>
                     </div>
+
                     <div class="form-group">
                         <label for="suffix">File Suffix:</label>
                         <select id="suffix" name="suffix">
                             <option value="">Any</option>
-                            <option value="T1w">T1w</option>
-                            <option value="T2w">T2w</option>
-                            <option value="bold">BOLD (func)</option>
-                            <option value="dwi">DWI</option>
-                            <option value="FLAIR">FLAIR</option>
+                            <optgroup label="Anatomical">
+                                <option value="T1w">T1-weighted</option>
+                                <option value="T2w">T2-weighted</option>
+                                <option value="T1rho">T1-rho</option>
+                                <option value="T1map">T1 map</option>
+                                <option value="T2map">T2 map</option>
+                                <option value="T2star">T2*</option>
+                                <option value="FLAIR">FLAIR</option>
+                                <option value="FLASH">FLASH</option>
+                                <option value="PDw">Proton density weighted</option>
+                                <option value="PDT2">PD/T2</option>
+                                <option value="inplaneT1">Inplane T1</option>
+                                <option value="inplaneT2">Inplane T2</option>
+                                <option value="angio">Angiography</option>
+                                <option value="defacemask">Defacing mask</option>
+                            </optgroup>
+                            <optgroup label="Functional">
+                                <option value="bold">BOLD</option>
+                                <option value="cbv">Cerebral blood volume</option>
+                                <option value="phase">Phase</option>
+                                <option value="sbref">Single-band reference</option>
+                            </optgroup>
+                            <optgroup label="Diffusion">
+                                <option value="dwi">Diffusion weighted</option>
+                                <option value="bvec">B-vectors</option>
+                                <option value="bval">B-values</option>
+                            </optgroup>
+                            <optgroup label="Field Maps">
+                                <option value="phasediff">Phase difference</option>
+                                <option value="phase1">Phase 1</option>
+                                <option value="phase2">Phase 2</option>
+                                <option value="magnitude1">Magnitude 1</option>
+                                <option value="magnitude2">Magnitude 2</option>
+                                <option value="magnitude">Magnitude</option>
+                                <option value="fieldmap">Field map</option>
+                                <option value="epi">EPI</option>
+                            </optgroup>
+                            <optgroup label="Perfusion">
+                                <option value="asl">Arterial spin labeling</option>
+                                <option value="m0scan">M0 scan</option>
+                                <option value="aslcontext">ASL context</option>
+                            </optgroup>
+                            <optgroup label="Electrophysiology">
+                                <option value="eeg">EEG</option>
+                                <option value="ieeg">iEEG</option>
+                                <option value="meg">MEG</option>
+                                <option value="electrodes">Electrodes</option>
+                                <option value="channels">Channels</option>
+                                <option value="events">Events</option>
+                            </optgroup>
+                            <optgroup label="Optical">
+                                <option value="nirs">NIRS</option>
+                                <option value="fnirs">fNIRS</option>
+                                <option value="optodes">Optodes</option>
+                            </optgroup>
+                            <optgroup label="Physiological">
+                                <option value="physio">Physiological</option>
+                                <option value="stim">Stimulus</option>
+                                <option value="recording">Recording</option>
+                            </optgroup>
+                            <optgroup label="Behavioral">
+                                <option value="beh">Behavioral</option>
+                                <option value="responses">Responses</option>
+                            </optgroup>
                         </select>
                     </div>
+
                     <div class="form-group">
                         <label for="task">Task:</label>
-                        <input type="text" id="task" name="task" placeholder="(optional)">
+                        <input type="text" id="task" name="task" placeholder="e.g., rest, nback, faces">
                     </div>
+
                     <div class="form-group">
                         <label for="session">Session:</label>
-                        <input type="text" id="session" name="session" placeholder="(optional)">
+                        <input type="text" id="session" name="session" placeholder="e.g., 1, baseline, followup">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="run">Run:</label>
+                        <input type="text" id="run" name="run" placeholder="e.g., 1, 2, 3">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="acquisition">Acquisition:</label>
+                        <input type="text" id="acquisition" name="acquisition" placeholder="e.g., highres, MPRAGE">
                     </div>
                 </div>
             </div>
+
             <div class="form-section">
-                <h3>👤 Participant Criteria</h3>
+                <h3 class="section-title">👤 Participant Criteria</h3>
                 <div class="form-grid">
                     <div class="form-group">
                         <label for="age">Age:</label>
-                        <input type="text" id="age" name="age" placeholder="e.g. >60">
+                        <input type="text" id="age" name="age" placeholder="e.g., >60, <30, >=18">
                     </div>
+                    
                     <div class="form-group">
-                        <label for="sex">Sex:</label>
+                        <label for="sex">Sex/Gender:</label>
                         <select id="sex" name="sex">
                             <option value="">Any</option>
-                            <option value="M">Male (M)</option>
-                            <option value="F">Female (F)</option>
+                            <option value="male">M (male)</option>
+                            <option value="female">F (female)</option>
                         </select>
                     </div>
+                    
                     <div class="form-group">
-                        <label for="group">Group:</label>
-                        <input type="text" id="group" name="group" placeholder="e.g. control">
+                        <label for="group">Group/Diagnosis:</label>
+                        <input type="text" id="group" name="group" placeholder="e.g., control, patient, HC">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="diagnosis">Diagnosis:</label>
+                        <input type="text" id="diagnosis" name="diagnosis" placeholder="e.g., AD, MCI, depression">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="handedness">Handedness:</label>
+                        <select id="handedness" name="handedness">
+                            <option value="">Any</option>
+                            <option value="R">Right</option>
+                            <option value="L">Left</option>
+                            <option value="A">Ambidextrous</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="education">Education (years):</label>
+                        <input type="text" id="education" name="education" placeholder="e.g., >12, <=16">
                     </div>
                 </div>
             </div>
-            <button type="submit" class="btn btn-primary">Search</button>
-            <a href="/" class="btn btn-secondary">Back to Dashboard</a>
+
+            <div style="text-align: center; margin-top: 30px;">
+                <button type="submit" class="btn btn-primary">🔍 Search</button>
+                <a href="/" class="btn btn-secondary">🏠 Back to Dashboard</a>
+            </div>
         </form>
+
         <div class="examples">
-            <h4>Search Tips:</h4>
-            <ul>
-                <li>You can use comparison operators (<code>&gt;</code>, <code>&lt;</code>, <code>&ge;</code>, <code>&le;</code>) for numeric fields (e.g., <code>age &gt; 60</code>).</li>
-                <li>Text criteria are case-insensitive and allow partial matches (e.g., entering "control" for diagnosis will match "Control" and "healthy control").</li>
-                <li>Leave fields blank or at "Any" to ignore that criterion.</li>
-            </ul>
+            <h4>💡 Search Tips & Examples:</h4>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 15px;">
+                <div>
+                    <strong>Numeric Comparisons:</strong>
+                    <ul>
+                        <li><code>age > 60</code> - Participants older than 60</li>
+                        <li><code>age >= 18</code> - Adults 18 and older</li>
+                        <li><code>age < 30</code> - Participants under 30</li>
+                        <li><code>education <= 12</code> - High school or less</li>
+                    </ul>
+                </div>
+                <div>
+                    <strong>Text Matching:</strong>
+                    <ul>
+                        <li><code>group: control</code> - Matches "Control", "healthy control"</li>
+                        <li><code>task: rest</code> - Finds resting-state data</li>
+                        <li><code>diagnosis: AD</code> - Alzheimer's disease patients</li>
+                        <li><code>sex: M</code> - Male participants only</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div style="margin-top: 20px;">
+                <strong>🎯 Common Search Examples:</strong>
+                <ul>
+                    <li><strong>T1w scans from elderly controls:</strong> datatype=anat, suffix=T1w, group=control, age>65</li>
+                    <li><strong>Resting-state fMRI from young adults:</strong> datatype=func, suffix=bold, task=rest, age>=18, age<30</li>
+                    <li><strong>EEG data from all participants:</strong> datatype=eeg</li>
+                    <li><strong>Female participants with behavioral data:</strong> sex=F, datatype=beh</li>
+                    <li><strong>DWI scans from session 1:</strong> datatype=dwi, suffix=dwi, session=1</li>
+                </ul>
+            </div>
+            
+            <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 5px; border-left: 4px solid #ffc107;">
+                <strong>⚠️ Important Notes:</strong>
+                <ul>
+                    <li>Leave fields blank or select "Any" to ignore that criterion</li>
+                    <li>Text searches are case-insensitive and support partial matches</li>
+                    <li>For sex/gender: "M" matches only males, "F" matches only females</li>
+                    <li>Combine multiple criteria to narrow down results</li>
+                    <li>Results show both matching files and participant information</li>
+                </ul>
+            </div>
         </div>
 
     </div>
+    
+    <script>
+        // Add form submission loading indicator
+        document.querySelector('form').addEventListener('submit', function() {
+            const submitBtn = document.querySelector('.btn-primary');
+            submitBtn.innerHTML = '🔄 Searching...';
+            submitBtn.disabled = true;
+        });
+
+        // Dynamic form interactions
+        document.getElementById('datatype').addEventListener('change', function() {
+            const suffix = document.getElementById('suffix');
+            const datatype = this.value;
+            
+            // Show relevant suffixes based on datatype selection
+            const allOptions = suffix.querySelectorAll('option');
+            allOptions.forEach(option => {
+                option.style.display = 'block';
+            });
+            
+            if (datatype) {
+                const optgroups = suffix.querySelectorAll('optgroup');
+                optgroups.forEach(group => {
+                    group.style.display = 'none';
+                });
+                
+                // Show relevant optgroups
+                switch(datatype) {
+                    case 'anat':
+                        document.querySelector('optgroup[label="Anatomical"]').style.display = 'block';
+                        break;
+                    case 'func':
+                        document.querySelector('optgroup[label="Functional"]').style.display = 'block';
+                        break;
+                    case 'dwi':
+                        document.querySelector('optgroup[label="Diffusion"]').style.display = 'block';
+                        break;
+                    case 'fmap':
+                        document.querySelector('optgroup[label="Field Maps"]').style.display = 'block';
+                        break;
+                    case 'perf':
+                        document.querySelector('optgroup[label="Perfusion"]').style.display = 'block';
+                        break;
+                    case 'eeg':
+                    case 'ieeg':
+                    case 'meg':
+                        document.querySelector('optgroup[label="Electrophysiology"]').style.display = 'block';
+                        break;
+                    case 'nirs':
+                    case 'fnirs':
+                        document.querySelector('optgroup[label="Optical"]').style.display = 'block';
+                        break;
+                    case 'physio':
+                    case 'stim':
+                        document.querySelector('optgroup[label="Physiological"]').style.display = 'block';
+                        break;
+                    case 'beh':
+                        document.querySelector('optgroup[label="Behavioral"]').style.display = 'block';
+                        break;
+                }
+            } else {
+                // Show all if no datatype selected
+                const optgroups = suffix.querySelectorAll('optgroup');
+                optgroups.forEach(group => {
+                    group.style.display = 'block';
+                });
+            }
+        });
+        
+        // Add placeholder suggestions based on field focus
+        const suggestions = {
+            'task': ['rest', 'nback', 'faces', 'flanker', 'stroop', 'motor', 'language', 'memory', 'emotion', 'reward'],
+            'session': ['1', '2', '3', 'baseline', 'followup', 'pre', 'post', 'training', 'test'],
+            'acquisition': ['MPRAGE', 'FSPGR', 'highres', 'lowres', 'spiral', 'multiband', 'singleband'],
+            'group': ['control', 'patient', 'HC', 'experimental', 'treatment', 'placebo'],
+            'diagnosis': ['AD', 'MCI', 'depression', 'anxiety', 'schizophrenia', 'bipolar', 'PTSD', 'autism', 'ADHD']
+        };
+        
+        Object.keys(suggestions).forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.addEventListener('focus', function() {
+                    const randomSuggestion = suggestions[fieldId][Math.floor(Math.random() * suggestions[fieldId].length)];
+                    if (!this.value) {
+                        this.placeholder = `e.g., ${randomSuggestion}`;
+                    }
+                });
+            }
+        });
+    </script>
 </body>
 </html>

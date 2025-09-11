@@ -352,9 +352,58 @@ def query_by_bids_criteria(base_dir, participant_data, **criteria):
     print(f"DEBUG: Final results: {len(results['participants_found'])} participants, {results['total_files']} files")
     return results
 
+def _normalize_sex_value(value):
+    """
+    Normalize sex/gender values to standard format for comparison.
+    
+    Args:
+        value: The sex/gender value from participant data
+        
+    Returns:
+        str: Normalized value ('M', 'F', or original if not recognized)
+    """
+    if pd.isna(value) or value is None:
+        return None
+    
+    value_str = str(value).strip().upper()
+    
+    # Handle common male representations
+    if value_str in ['M', 'MALE', '1']:  # Note: 1 is common coding for male
+        return 'male'
+    
+    # Handle common female representations  
+    if value_str in ['F', 'FEMALE', '0', '2']:  # Note: 0 or 2 can be female coding
+        return 'female'
+    
+    # Return original if not recognized
+    return value_str
+
+def _matches_sex_criterion(participant_value, criterion_value):
+    """
+    Special matching function for sex/gender that handles various encodings.
+    
+    Args:
+        participant_value: Value from participant data
+        criterion_value: Value to match against
+        
+    Returns:
+        bool: True if matches, False otherwise
+    """
+    # Normalize both values
+    normalized_participant = _normalize_sex_value(participant_value)
+    normalized_criterion = _normalize_sex_value(criterion_value)
+    
+    if normalized_participant is None or normalized_criterion is None:
+        return False
+    
+    print(f"DEBUG: Sex matching - participant: '{participant_value}' -> '{normalized_participant}', criterion: '{criterion_value}' -> '{normalized_criterion}'")
+    
+    return normalized_participant == normalized_criterion
+
 def _matches_criterion(participant_value, criterion_value):
     """
     Check if a participant value matches a criterion.
+    IMPROVED: Better handling of sex/gender and other special cases.
     
     Args:
         participant_value: Value from participant data
@@ -399,10 +448,10 @@ def _matches_criterion(participant_value, criterion_value):
             try:
                 return float(participant_value) == float(criterion_value)
             except (ValueError, TypeError):
-                # Fall back to case-insensitive substring match
-                participant_str = str(participant_value).lower().strip()
-                criterion_str = str(criterion_value).lower().strip()
-                return criterion_str in participant_str
+                # For other text fields, use substring match
+                participant_str = str(participant_value).strip()
+                criterion_str   = str(criterion_value).strip()
+                return participant_str.casefold() == criterion_str.casefold()
     
     except Exception as e:
         print(f"DEBUG: Error matching criterion: {e}")

@@ -10,7 +10,7 @@ _layout_cache = {}
 
 def _is_valid_bids_dir(p: Path) -> bool:
     """Quick validation: folder exists and has dataset_description.json."""
-    return p.exists()# and (p / "dataset_description.json").exists()
+    return p.exists() and (p / "dataset_description.json").exists()
 
 def _load_cached_datasets(base_dir: Path, cache_ttl_hours=None):
     """

@@ -8,6 +8,11 @@ BIDSQuery is a Flask web application that bridges the gap between sensitive part
 2. **Search by BIDS criteria** (T1w, age>60, etc.) → Find matching participants
 3. **Maintain security** while linking sensitive and anonymous data
 
+## Build
+```python
+pyinstaller --onefile --name BIDSQuery --add-data "templates;templates" app.py
+```
+
 ## Directory Structure
 
 ```

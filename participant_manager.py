@@ -209,6 +209,14 @@ def filter_participants_by_criteria(participant_data, **criteria):
     df = participant_data['data'].copy()
     for criterion, value in criteria.items():
         if criterion in df.columns:
+            # inside filter_participants_by_criteria(...) where text columns are handled
+            if criterion.lower() in ['sex', 'gender', 'sexo', 'género', 'genero']:
+                df = df[df[criterion].astype(str).str.strip().str.casefold()
+                        == str(value).strip().casefold()]
+            else:
+                # keep your existing behavior (contains) for other free-text fields
+                df = df[df[criterion].astype(str).str.contains(str(value), case=False, na=False)]
+
             if isinstance(value, str) and any(op in value for op in ['>', '<', '>=', '<=', '!=']):
                 # Numeric comparisons on DataFrame
                 try:
@@ -224,6 +232,7 @@ def filter_participants_by_criteria(participant_data, **criteria):
                         not_val = value.replace('!=', '').strip(); df = df[df[criterion] != not_val]
                 except ValueError:
                     print(f"Warning: Could not parse numerical criterion: {criterion}={value}")
+                    
             else:
                 # Tolerant matching for other criteria
                 if pd.api.types.is_numeric_dtype(df[criterion]):
